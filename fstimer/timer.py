@@ -1,26 +1,28 @@
 #!/usr/bin/env python
 
-#fsTimer - free, open source software for race timing.
-#Copyright 2012-14 Ben Letham
 
-#This program is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# fsTimer - free, open source software for race timing.
+# Copyright 2012-14 Ben Letham
 
-#This program is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-#You should have received a copy of the GNU General Public License
-#along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
-#The author/copyright holder can be contacted at bletham@gmail.com
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# The author/copyright holder can be contacted at bletham@gmail.com
 
 '''Main class of the fsTimer package'''
 
 import pygtk
+
 pygtk.require('2.0')
 import gtk
 import os, json, csv, re, datetime
@@ -39,11 +41,14 @@ import fstimer.gui.compile
 import fstimer.gui.compileerrors
 import fstimer.gui.pretime
 import fstimer.gui.timing
+import fstimer.gui.printshirtnumber
 import fstimer.printcsv
 import fstimer.printcsvlaps
 import fstimer.printhtml
 import fstimer.printhtmllaps
 from collections import defaultdict
+
+import barcode
 
 
 class PyTimer(object):
@@ -57,9 +62,9 @@ class PyTimer(object):
     def load_project(self, jnk_unused, combobox, projectlist):
         '''Loads the registration settings of a project, and go back to rootwin'''
         self.path = projectlist[combobox.get_active()]
-        with open(os.path.join(self.path, self.path+'.reg'), 'rb') as fin:
+        with open(os.path.join(self.path, self.path + '.reg'), 'rb') as fin:
             regdata = json.load(fin)
-        #Assign all of the project settings
+        # Assign all of the project settings
         self.fields = regdata['fields']
         self.fieldsdic = regdata['fieldsdic']
         self.clear_for_fam = regdata['clear_for_fam']
@@ -73,7 +78,7 @@ class PyTimer(object):
             self.numlaps = regdata['numlaps']
         except KeyError:
             self.numlaps = 1
-        #Move on to the main window
+        # Move on to the main window
         self.introwin.hide()
         self.rootwin = fstimer.gui.root.RootWin(self.path,
                                                 self.show_about,
@@ -84,18 +89,18 @@ class PyTimer(object):
 
     def create_project(self, jnk_unused):
         '''creates a new project'''
-        self.project_types = ['standard', 'handicap'] #Options for project types
-        #First load in the default project settings
+        self.project_types = ['standard', 'handicap']  # Options for project types
+        # First load in the default project settings
         with open('fstimer/data/fstimer_default_project.reg', 'rb') as fin:
             regdata = json.load(fin)
-        #Assign all of the project settings
+        # Assign all of the project settings
         self.fields = regdata['fields']
         self.fieldsdic = regdata['fieldsdic']
         self.clear_for_fam = regdata['clear_for_fam']
         self.divisions = regdata['divisions']
         self.projecttype = regdata['projecttype']
         self.numlaps = regdata['numlaps']
-        #And load the new project window
+        # And load the new project window
         self.newprojectwin = fstimer.gui.newproject.NewProjectWin(self.set_projecttype,
                                                                   self.introwin)
 
@@ -112,7 +117,7 @@ class PyTimer(object):
     def define_fields(self, jnk_unused, rbs, check_button, numlapsbtn):
         '''Handled the definition of fields when creating a new project'''
         self.projecttypewin.hide()
-        #First take care of the race settings from the previous window
+        # First take care of the race settings from the previous window
         for b, btn in rbs.iteritems():
             if btn.get_active():
                 self.projecttype = self.project_types[b]
@@ -121,16 +126,16 @@ class PyTimer(object):
             self.numlaps = numlapsbtn.get_value_as_int()
         else:
             self.numlaps = 1
-        #We will use self.fields and self.fieldsdic as already loaded, but add/remove Handicap field according projecttype.
+        # We will use self.fields and self.fieldsdic as already loaded, but add/remove Handicap field according projecttype.
         if self.projecttype == 'handicap':
             if 'Handicap' not in self.fields:
                 self.fields.append('Handicap')
-                self.fieldsdic['Handicap'] = {'type':'entrybox', 'max':20}
+                self.fieldsdic['Handicap'] = {'type': 'entrybox', 'max': 20}
                 self.clear_for_fam.append('Handicap')
-        #And now generate the window.
+        # And now generate the window.
         self.definefieldswin = fstimer.gui.definefields.DefineFieldsWin \
-          (self.fields, self.fieldsdic, self.projecttype, self.back_to_projecttype,
-           self.define_family_reset, self.introwin)
+            (self.fields, self.fieldsdic, self.projecttype, self.back_to_projecttype,
+             self.define_family_reset, self.introwin)
 
     def back_to_projecttype(self, jnk_unused):
         '''Goes back to new project window'''
@@ -146,8 +151,8 @@ class PyTimer(object):
         '''Goes to family reset window'''
         self.definefieldswin.hide()
         self.familyresetwin = fstimer.gui.definefamilyreset.FamilyResetWin \
-          (self.fields, self.clear_for_fam, self.back_to_define_fields,
-           self.define_divisions, self.introwin)
+            (self.fields, self.clear_for_fam, self.back_to_define_fields,
+             self.define_divisions, self.introwin)
 
     def back_to_define_fields(self, jnk_unused):
         '''Goes back to define fields window from the family reset one'''
@@ -162,7 +167,8 @@ class PyTimer(object):
                 self.clear_for_fam.append(field)
         self.familyresetwin.hide()
         self.divisionswin = fstimer.gui.definedivisions.DivisionsWin \
-          (self.fields, self.fieldsdic, self.divisions, self.back_to_family_reset, self.store_new_project, self.introwin)
+            (self.fields, self.fieldsdic, self.divisions, self.back_to_family_reset, self.store_new_project,
+             self.introwin)
 
     def back_to_family_reset(self, jnk_unused):
         '''Goes back to family reset window, from the division edition one'''
@@ -171,7 +177,7 @@ class PyTimer(object):
 
     def store_new_project(self, jnk_unused):
         '''Stores a new project to file and goes to root window'''
-        os.system('mkdir '+self.path)
+        os.system('mkdir ' + self.path)
         regdata = {}
         regdata['projecttype'] = self.projecttype
         regdata['numlaps'] = self.numlaps
@@ -179,9 +185,10 @@ class PyTimer(object):
         regdata['fieldsdic'] = self.fieldsdic
         regdata['clear_for_fam'] = self.clear_for_fam
         regdata['divisions'] = self.divisions
-        with open(os.path.join(self.path, self.path+'.reg'), 'wb') as fout:
+        with open(os.path.join(self.path, self.path + '.reg'), 'wb') as fout:
             json.dump(regdata, fout)
-        md = gtk.MessageDialog(self.divisionswin, gtk.DIALOG_MODAL, gtk.MESSAGE_INFO, gtk.BUTTONS_OK, 'Project '+self.path+' successfully created!')
+        md = gtk.MessageDialog(self.divisionswin, gtk.DIALOG_MODAL, gtk.MESSAGE_INFO, gtk.BUTTONS_OK,
+                               'Project ' + self.path + ' successfully created!')
         md.run()
         md.destroy()
         self.divisionswin.hide()
@@ -199,11 +206,14 @@ class PyTimer(object):
 
     def import_prereg(self, jnk_unused):
         '''import pre-registration from a csv'''
-        self.importpreregwin = fstimer.gui.importprereg.ImportPreRegWin(os.getcwd(), self.path, self.fields, self.fieldsdic)
+        self.importpreregwin = fstimer.gui.importprereg.ImportPreRegWin(os.getcwd(), self.path, self.fields,
+                                                                        self.fieldsdic)
 
     def handle_preregistration(self, jnk_unused):
         '''handles preregistration'''
-        self.preregistrationwin = fstimer.gui.preregister.PreRegistrationWin(os.getcwd(), self.path, self.set_registration_file, self.handle_registration)
+        self.preregistrationwin = fstimer.gui.preregister.PreRegistrationWin(os.getcwd(), self.path,
+                                                                             self.set_registration_file,
+                                                                             self.handle_registration)
 
     def set_registration_file(self, filename):
         '''set a preregistration file'''
@@ -215,19 +225,23 @@ class PyTimer(object):
         self.preregistrationwin.hide()
         self.regid = regid
         if not hasattr(self, 'prereg'):
-            self.prereg = [] #No pre-registration was selected
-        self.registrationwin = fstimer.gui.register.RegistrationWin(self.path, self.fields, self.fieldsdic, self.prereg, self.clear_for_fam, self.projecttype, self.save_registration)
+            self.prereg = []  # No pre-registration was selected
+        self.registrationwin = fstimer.gui.register.RegistrationWin(self.path, self.fields, self.fieldsdic, self.prereg,
+                                                                    self.clear_for_fam, self.projecttype,
+                                                                    self.save_registration,
+                                                                    self.handle_printnumbers_prereg)
 
     def save_registration(self):
         '''saves registration'''
-        filename = os.path.join(self.path, self.path+'_registration_'+str(self.regid)+'.json')
+        filename = os.path.join(self.path, self.path + '_registration_' + str(self.regid) + '.json')
         with open(filename, 'wb') as fout:
             json.dump(self.prereg, fout)
         return filename
 
     def compreg_window(self, jnk_unused):
         '''Merges registration files and create the timing dictionary.'''
-        self.compilewin = fstimer.gui.compile.CompilationWin(self.path, self.merge_compreg)
+        self.compilewin = fstimer.gui.compile.CompilationWin(self.path, self.merge_compreg,
+                                                             self.handle_printnumbers_compreg)
 
     def merge_compreg(self, regfilelist):
         '''Merges the given registration files
@@ -261,7 +275,7 @@ class PyTimer(object):
                 for i in range(len(self.reg_nodups0)):
                     dicttmp = self.reg_nodups0[i].copy()
                     if dicttmp['ID']:
-                        #lets make sure we aren't a dup of this one
+                        # lets make sure we aren't a dup of this one
                         dicttmp['ID'] = ''
                         if reg == dicttmp:
                             dupcheck = 1
@@ -286,9 +300,12 @@ class PyTimer(object):
                     self.timedict[reg['ID']] = reg
         # If there are errors, we must correct them
         if self.errors:
-            self.compilewin.setLabel(1, '<span color="blue">Checking for errors...</span> <span color="red">Errors found!</span>')
+            self.compilewin.setLabel(1,
+                                     '<span color="blue">Checking for errors...</span> <span color="red">Errors found!</span>')
             # Now we make a dialog to deal with errors...
-            self.comperrorswin = fstimer.gui.compileerrors.CompilationErrorsWin(self.path, self.compilewin, self.errors, self.fields, self.timedict, self.compreg_noerrors)
+            self.comperrorswin = fstimer.gui.compileerrors.CompilationErrorsWin(self.path, self.compilewin, self.errors,
+                                                                                self.fields, self.timedict,
+                                                                                self.compreg_noerrors)
         else:
             # If no errors, continue on
             self.compreg_noerrors()
@@ -300,21 +317,99 @@ class PyTimer(object):
             self.compilewin.setLabel(1, '<span color="blue">Checking for errors... errors corrected.</span>')
         else:
             self.compilewin.setLabel(1, '<span color="blue">Checking for errors... no errors found!</span>')
-        #Now save things
-        with open(os.path.join(self.path, self.path+'_registration_compiled.json'), 'wb') as fout:
+        # Now save things
+        with open(os.path.join(self.path, self.path + '_registration_compiled.json'), 'wb') as fout:
             json.dump(self.reg_nodups, fout)
-        with open(os.path.join(self.path, self.path+'_timing_dict.json'), 'wb') as fout:
+        with open(os.path.join(self.path, self.path + '_timing_dict.json'), 'wb') as fout:
             json.dump(self.timedict, fout)
         regfn = os.path.join(self.path, self.path + '_registration_compiled.json')
         timefn = os.path.join(self.path, self.path + '_timing_dict.json')
         self.compilewin.setLabel(2, '<span color="blue">Successfully wrote files:\n' + \
                                  regfn + '\n' + timefn + '</span>')
-        #And write the compiled registration to csv
-        with open(os.path.join(self.path, self.path+'_registration.csv'), 'wb') as fout:
+        # And write the compiled registration to csv
+        with open(os.path.join(self.path, self.path + '_registration.csv'), 'wb') as fout:
             dict_writer = csv.DictWriter(fout, self.fields)
             dict_writer.writer.writerow(self.fields)
             dict_writer.writerows(self.reg_nodups)
         return
+
+    def handle_printnumbers_prereg(self, jnk_unused):
+        '''handles preregistration shirt numbers print'''
+        self.printshirtwin = fstimer.gui.printshirtnumber.PrintShirtNumberWin(self.path, 'prereg',
+                                                                              self.print_numbers)
+    def handle_printnumbers_compreg(self, jnk_unused):
+        '''handles preregistration shirt numbers print'''
+        self.printshirtwin = fstimer.gui.printshirtnumber.PrintShirtNumberWin(self.path, 'compreg',
+                                                                              self.print_numbers)
+
+    def print_numbers(self, options, flag):
+        '''the actual function for shirt numbers print'''
+        from imagetext import ImageText
+        import Image, subprocess
+        if flag == 'prereg':
+            regjson = self.prereg
+        elif flag == 'compreg':
+            regjson = self.regmerge
+
+        # Deal with background and logos
+        i1 = Image.open(options['background'])
+        i2 = Image.open(options['logo'])
+        size1 = i1.size
+        size2 = i2.size
+
+        if size2[0] > size1[0] and size2[1] > size1[1]:
+            print 'Print image is bigger than background...rescaling'
+            i2.resize((size1[0], size1[1]))
+            i1.paste(i2, (size1[0], size1[1]), i2)
+        if size2[0] < size1[0] and size2[1] < size1[0]:
+            print 'Print image is smaller than background...compute center, plus offset'
+            i1.paste(i2, ((size1[0] / 2) - (size2[0] / 2), (size1[1] / 2) - (size2[1] / 2) + 100), i2)
+
+        # Check for IDs
+        finalreg = []
+        for item in regjson:
+            if item['ID'] != '':
+                finalreg.append(item)
+
+        if len(finalreg) > 999:
+            trz = 4
+        else:
+            trz = 3
+
+        for item in finalreg:
+            img = None
+            f = None
+            try:
+                img = ImageText((750, 550), background=(255, 255, 255, 0))
+                number = str(int(trz - len(item['ID'])) * "0") + item['ID']
+                img.write_text_box((180, 440), item['First name'] + ' ' + item['Last name'],
+                                   box_width=400, font_filename=options['fontLetters'],
+                                   font_size=24, color=options['fontColor'], place='center')
+                img.write_text_box((180, 40), options['eventname'], box_width=400,
+                                   font_filename=options['fontLetters'],
+                                   font_size=34, color=options['fontColor'], place='center')
+                img.write_text((170, 90), number, font_filename=options['fontNumbers'],
+                               font_size='fill', max_height=200, max_width=400, color=options['fontColor'])
+
+                img.save(options['export'] + '/temp_' + item['ID'] + '.png')
+                # Process barcode
+                subprocess.Popen(
+                    ['pybarcode2', 'create', '-t', 'png', item['ID'],
+                     options['export'] + '/barcode_' + item['ID']]).communicate()
+
+                bcimg = Image.open(options['export'] + '/barcode_' + item['ID'] + '.png')
+
+                temp_img = Image.open(options['export'] + '/temp_' + item['ID'] + '.png')
+                temp_img.paste(bcimg.resize((bcimg.size[0] / 2, bcimg.size[1] / 2), Image.ANTIALIAS).rotate(-90),
+                               (0, 320))
+                f = img.merge(i1, temp_img)
+                f.save(options['export'] + '/' + item['ID'] + '.png')
+                os.remove(options['export'] + '/temp_' + item['ID'] + '.png')
+                os.remove(options['export'] + '/barcode_' + item['ID'] + '.png')
+            except Exception, e:
+                # log some traceback for debug
+                print 'Error shirt print: ' + e
+                continue
 
     def gen_pretimewin(self, jnk_unused):
         '''Selects a timing dictionary to use'''
@@ -327,9 +422,10 @@ class PyTimer(object):
         # we're done with pretiming
         self.pretimewin.hide()
         # We will store 'raw' data, lists of times and IDs.
-        self.rawtimes = {'times':[], 'ids':[]}
+        self.rawtimes = {'times': [], 'ids': []}
         # create Timing window
-        self.timewin = fstimer.gui.timing.TimingWin(self.path, self.rootwin, timebtn, self.rawtimes, self.timing, self.print_times, self.projecttype, self.numlaps)
+        self.timewin = fstimer.gui.timing.TimingWin(self.path, self.rootwin, timebtn, self.rawtimes, self.timing,
+                                                    self.print_times, self.projecttype, self.numlaps)
 
     def print_times(self, jnk_unused, use_csv):
         '''print times to a file'''
@@ -356,7 +452,7 @@ class PyTimer(object):
         printer = printer_class(fields, [div[0] for div in self.divisions])
         # first build all results into strings
         scratchresults = printer.scratch_table_header()
-        divresults = {div[0]:'\n'+printer.cat_table_header(div[0])
+        divresults = {div[0]: '\n' + printer.cat_table_header(div[0])
                       for div in self.divisions}
         for (tag, time) in self.get_sorted_results():
             scratchresults += printer.scratch_entry(tag, time, self.timing[tag])
@@ -416,7 +512,7 @@ class PyTimer(object):
         '''returns a list of ids and a list of timedeltas that are
            "synced", that is that have the same number of entries.
            Entries without a counterpart are dropped'''
-        #Note that the newest entries are at the _start_ of the rawtimes lists
+        # Note that the newest entries are at the _start_ of the rawtimes lists
         offset = len(self.rawtimes['times']) - len(self.rawtimes['ids'])
         if offset < 0:
             adj_ids = self.rawtimes['ids'][-offset:]
@@ -434,21 +530,23 @@ class PyTimer(object):
            The content of result depends on the race type'''
         # get raw times
         timeslist = zip(*self.get_sync_times_and_ids())
-        #Handle blank times, and handicap correction
+        # Handle blank times, and handicap correction
         # Handicap correction
         if self.projecttype == 'handicap':
             new_timeslist = []
             for tag, time in timeslist:
                 if tag and time and tag != self.passid:
                     try:
-                        new_timeslist.append((tag, str(fstimer.gui.timing.time_parse(time) - fstimer.gui.timing.time_parse(self.timing[tag]['Handicap']))[:-5]))
+                        new_timeslist.append((tag, str(
+                            fstimer.gui.timing.time_parse(time) - fstimer.gui.timing.time_parse(
+                                self.timing[tag]['Handicap']))[:-5]))
                     except AttributeError:
-                        #Either time or Handicap couldn't be converted to timedelta. It will be dropped.
+                        # Either time or Handicap couldn't be converted to timedelta. It will be dropped.
                         pass
-                #else: We just drop entries with blank tag, blank time, or the pass ID
-            timeslist = list(new_timeslist) #replace
+                        # else: We just drop entries with blank tag, blank time, or the pass ID
+            timeslist = list(new_timeslist)  # replace
         else:
-            #Drop times that are blank or have the passid
+            # Drop times that are blank or have the passid
             timeslist = [(tag, time) for tag, time in timeslist if tag and time and tag != self.passid]
         # sort by time
         timeslist = sorted(timeslist, key=lambda entry: entry[1])
@@ -473,5 +571,7 @@ class PyTimer(object):
                 # And now the first lap
                 laptimesdic2[tag].append(laptimesdic[tag][0])
                 # And now the subsequent laps
-                laptimesdic2[tag].extend([str(fstimer.gui.timing.time_parse(laptimesdic[tag][ii+1]) - fstimer.gui.timing.time_parse(laptimesdic[tag][ii]))[:-5] for ii in range(len(laptimesdic[tag])-1)])
+                laptimesdic2[tag].extend([str(
+                    fstimer.gui.timing.time_parse(laptimesdic[tag][ii + 1]) - fstimer.gui.timing.time_parse(
+                        laptimesdic[tag][ii]))[:-5] for ii in range(len(laptimesdic[tag]) - 1)])
             return sorted(laptimesdic2.items(), key=lambda entry: entry[1][0])

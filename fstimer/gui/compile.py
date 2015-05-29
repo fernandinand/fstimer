@@ -26,11 +26,12 @@ import os
 class CompilationWin(gtk.Window):
     '''Handling of the window dedicated to compilation of registrations from multiple computers'''
 
-    def __init__(self, path, merge_cb):
+    def __init__(self, path, merge_cb, print_shirt_cb):
         '''Builds and display the compilation window'''
         super(CompilationWin, self).__init__(gtk.WINDOW_TOPLEVEL)
         self.path = path
         self.merge_cb = merge_cb
+        self.print_shirt_cb = print_shirt_cb
         self.modify_bg(gtk.STATE_NORMAL, fstimer.gui.bgcolor)
         self.set_icon_from_file('fstimer/data/icon.png')
         self.set_title('fsTimer - ' + path)
@@ -74,11 +75,15 @@ class CompilationWin(gtk.Window):
         btnREMOVE.connect('clicked', self.rm_clicked)
         btnADD = gtk.Button(stock=gtk.STOCK_ADD)
         btnADD.connect('clicked', self.add_clicked)
+        btnPRINT = gtk.Button(stock=gtk.STOCK_PRINT)
+        btnPRINT.connect('clicked', self.print_shirt_cb)
+        btnPRINT.set_sensitive(False)
         btnMERGE = gtk.Button('Merge')
-        btnMERGE.connect('clicked', self.merge_clicked)
+        btnMERGE.connect('clicked', self.merge_clicked,  btnPRINT)
         btnOK = gtk.Button('Done')
         btnOK.connect('clicked', lambda jnk: self.hide())
         vsubbox = gtk.VBox(False, 8)
+        vsubbox.pack_start(btnPRINT, False, False, 0)
         vsubbox.pack_start(btnMERGE, False, False, 0)
         vsubbox.pack_start(btnOK, False, False, 0)
         regvspacer = gtk.Alignment(1, 1, 0, 0)
@@ -121,12 +126,13 @@ class CompilationWin(gtk.Window):
                 self.reglist.append([filenm])
         chooser.destroy()
 
-    def merge_clicked(self, jnk_unused):
+    def merge_clicked(self, jnk_unused, btnPRINT):
         '''Handling click on Merge button'''
         # Grab all of the filenames from the liststore
         filenames = []
         self.reglist.foreach(lambda model, path, titer: filenames.append(model.get_value(titer, 0)))
         self.merge_cb(filenames)
+        btnPRINT.set_sensitive(True)
 
     def resetLabels(self):
         '''Empties text in labels'''

@@ -26,7 +26,7 @@ import re
 class RegistrationWin(gtk.Window):
     '''Handling of the window dedicated to registration'''
 
-    def __init__(self, path, fields, fieldsdic, prereg, clear_for_fam, projecttype, save_registration_cb):
+    def __init__(self, path, fields, fieldsdic, prereg, clear_for_fam, projecttype, save_registration_cb, print_shirt_cb):
         '''Builds and display the registration window'''
         super(RegistrationWin, self).__init__(gtk.WINDOW_TOPLEVEL)
         self.fields = fields
@@ -35,6 +35,7 @@ class RegistrationWin(gtk.Window):
         self.clear_for_fam = clear_for_fam
         self.projecttype = projecttype
         self.save_registration_cb = save_registration_cb
+        self.print_shirt_cb = print_shirt_cb
         self.editreg_win = None
         self.editregfields = None
         # First we define the registration model.
@@ -104,8 +105,11 @@ class RegistrationWin(gtk.Window):
         btnFAM.connect('clicked', self.fam_clicked)
         btnNEW = gtk.Button(stock=gtk.STOCK_NEW)
         btnNEW.connect('clicked', self.new_clicked)
+        btnPRINT = gtk.Button(stock=gtk.STOCK_PRINT)
+        btnPRINT.connect('clicked', self.print_shirt_cb)
+        btnPRINT.set_sensitive(False)
         btnSAVE = gtk.Button(stock=gtk.STOCK_SAVE)
-        btnSAVE.connect('clicked', self.save_clicked)
+        btnSAVE.connect('clicked', self.save_clicked,  btnPRINT)
         btnOK = gtk.Button('Done')
         btnOK.connect('clicked', self.ok_clicked)
         vsubbox = gtk.VBox(False, 8)
@@ -119,6 +123,7 @@ class RegistrationWin(gtk.Window):
         regvbox2.pack_start(btnREMOVE, False, False, 0)
         regvbox2.pack_start(btnFAM, False, False, 0)
         regvbox2.pack_start(btnNEW, False, False, 0)
+        regvbox2.pack_start(btnPRINT, False, False, 0)
         regvbalign = gtk.Alignment(1, 0, 0, 0)
         regvbalign.add(regvbox2)
         regtable.attach(regvbalign, 0, 1, 0, 1)
@@ -212,11 +217,12 @@ class RegistrationWin(gtk.Window):
            Creates the editreg window with a None treeiter and clear initial values.'''
         self.edit_registration(None, None, None)
 
-    def save_clicked(self, jnk_unused):
+    def save_clicked(self, jnk_unused, btnPRINT):
         '''Handles click on the 'save' button on the registration window.
            We do a json dump of self.prereg'''
         filename = self.save_registration_cb()
         self.regstatus.set_markup('<span color="blue">Registration saved to %s</span>' % filename)
+        btnPRINT.set_sensitive(True)
 
     def ok_clicked(self, jnk_unused):
         '''Handles click on the 'ok' button on the registration window.
@@ -228,7 +234,7 @@ class RegistrationWin(gtk.Window):
         okreg_dialog.destroy()
         if response == gtk.RESPONSE_YES:
             # this will save
-            self.save_clicked(None)
+            self.save_clicked(None, self)
         self.hide()
         # Clear the file setting from pre-reg, in case pre-reg is
         # re-run without selecting a file
