@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
-
-# fsTimer - free, open source software for race timing.
-# Copyright 2012-14 Ben Letham
+#fsTimer - free, open source software for race timing.
+#Copyright 2012-14 Ben Letham
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +24,7 @@ import pygtk
 
 pygtk.require('2.0')
 import gtk
-import os, json, csv, re, datetime
+import os, json, csv
 import fstimer.gui.intro
 import fstimer.gui.newproject
 import fstimer.gui.projecttype
@@ -47,8 +46,6 @@ import fstimer.printcsvlaps
 import fstimer.printhtml
 import fstimer.printhtmllaps
 from collections import defaultdict
-
-import barcode
 
 
 class PyTimer(object):
@@ -358,11 +355,9 @@ class PyTimer(object):
         size2 = i2.size
 
         if size2[0] > size1[0] and size2[1] > size1[1]:
-            print 'Print image is bigger than background...rescaling'
             i2.resize((size1[0], size1[1]))
             i1.paste(i2, (size1[0], size1[1]), i2)
         if size2[0] < size1[0] and size2[1] < size1[0]:
-            print 'Print image is smaller than background...compute center, plus offset'
             i1.paste(i2, ((size1[0] / 2) - (size2[0] / 2), (size1[1] / 2) - (size2[1] / 2) + 100), i2)
 
         # Check for IDs

@@ -1,23 +1,24 @@
-#fsTimer - free, open source software for race timing.
-#Copyright 2012-14 Ben Letham
+# fsTimer - free, open source software for race timing.
+# Copyright 2012-14 Ben Letham
 
-#This program is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-#This program is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
-#You should have received a copy of the GNU General Public License
-#along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#The author/copyright holder can be contacted at bletham@gmail.com
+# The author/copyright holder can be contacted at bletham@gmail.com
 '''Handling of the timing window'''
 
 import pygtk
+
 pygtk.require('2.0')
 import gtk
 import fstimer.gui
@@ -32,9 +33,11 @@ import json
 import pango
 from collections import defaultdict, Counter
 
+
 class MergeError(Exception):
     '''Exception used in case of merging error'''
     pass
+
 
 def time_format(t):
     '''formats time for display in the timing window'''
@@ -47,11 +50,15 @@ def time_format(t):
         s = '%s day%s, ' % (days, 's' if days > 1 else '') + s
     return s
 
+
 def time_parse(dt):
     '''converts string time to datetime.timedelta'''
-    d = re.match(r'((?P<days>\d+) days, )?((?P<hours>\d+):)?(?P<minutes>\d+):(?P<seconds>\d+)(\.(?P<milliseconds>\d+))?', dt).groupdict(0)
-    d['milliseconds'] = int(d['milliseconds'])*100
+    d = re.match(
+        r'((?P<days>\d+) days, )?((?P<hours>\d+):)?(?P<minutes>\d+):(?P<seconds>\d+)(\.(?P<milliseconds>\d+))?',
+        dt).groupdict(0)
+    d['milliseconds'] = int(d['milliseconds']) * 100
     return datetime.timedelta(**dict(((key, int(value)) for key, value in d.items())))
+
 
 class TimingWin(gtk.Window):
     '''Handling of the timing window'''
@@ -83,13 +90,13 @@ class TimingWin(gtk.Window):
         self.timeview.append_column(column)
         column = gtk.TreeViewColumn('Time', gtk.CellRendererText(), text=1)
         self.timeview.append_column(column)
-        #An extra column if it is a handicap race
+        # An extra column if it is a handicap race
         if projecttype == 'handicap':
             renderer = gtk.CellRendererText()
             column = gtk.TreeViewColumn('Corrected Time', renderer)
             column.set_cell_data_func(renderer, self.print_corrected_time)
             self.timeview.append_column(column)
-        #Another extra column if it is a lap race
+        # Another extra column if it is a lap race
         if self.numlaps > 1:
             renderer = gtk.CellRendererText()
             column = gtk.TreeViewColumn('Completed laps', renderer)
@@ -108,12 +115,12 @@ class TimingWin(gtk.Window):
         timealgn = gtk.Alignment(0, 0, 1, 1)
         timealgn.add(self.timesw)
         self.entrybox = gtk.Entry(max=40)
-        self.offset = 0 #this is len(times) - len(ids)
+        self.offset = 0  # this is len(times) - len(ids)
         self.entrybox.connect('activate', self.record_time)
         self.entrybox.connect('changed', self.check_for_newtime)
         # And we will save our file
         self.timestr = re.sub(' +', '_', time.ctime()).replace(':', '')
-        #we save with the current time in the filename so no chance of being overwritten accidentally
+        # we save with the current time in the filename so no chance of being overwritten accidentally
         # Now lets go on to boxes
         tophbox = gtk.HBox()
         # our default t0, and the stuff on top for setting/edit t0
@@ -122,8 +129,9 @@ class TimingWin(gtk.Window):
         btn_t0.connect('clicked', self.set_t0)
         # time display
         self.clocklabel = gtk.Label()
-        self.clocklabel.modify_font(pango.FontDescription("sans 20"))
-        self.clocklabel.set_markup(time_format(0))
+        # self.clocklabel.modify_font(pango.FontDescription("sans 20"))
+        self.check_fonts('TRACEROUTE')
+        # self.clocklabel.set_markup(time_format(0))
         tophbox.pack_start(btn_t0, False, False, 10)
         tophbox.pack_start(self.clocklabel, False, False, 10)
         timevbox1 = gtk.VBox(False, 8)
@@ -143,29 +151,29 @@ class TimingWin(gtk.Window):
         vbox1align = gtk.Alignment(0, 0, 1, 1)
         vbox1align.add(timevbox1)
         # buttons on the right side
-        #First an options button that will actually be a menu
+        # First an options button that will actually be a menu
         options_menu = gtk.Menu()
         menu_editt0 = gtk.MenuItem('Edit starting time')
         menu_editt0.connect_object("activate", self.edit_t0, None)
         menu_editt0.show()
         options_menu.append(menu_editt0)
         menu_savecsv = gtk.MenuItem('Save results to CSV')
-        menu_savecsv.connect_object("activate", print_cb, None, True) #True is to print csv
+        menu_savecsv.connect_object("activate", print_cb, None, True)  # True is to print csv
         menu_savecsv.show()
         options_menu.append(menu_savecsv)
         menu_resume = gtk.MenuItem('Load saved timing session')
-        menu_resume.connect_object("activate", self.resume_times, None, False) #False is for not merging
+        menu_resume.connect_object("activate", self.resume_times, None, False)  # False is for not merging
         menu_resume.show()
         options_menu.append(menu_resume)
         menu_merge = gtk.MenuItem('Merge in saved IDs or times')
-        menu_merge.connect_object("activate", self.resume_times, None, True) #True is for merging
+        menu_merge.connect_object("activate", self.resume_times, None, True)  # True is for merging
         menu_merge.show()
         options_menu.append(menu_merge)
         btnOPTIONS = gtk.Button('Options')
         btnOPTIONS.connect_object("event", self.options_btn, options_menu)
         options_align = gtk.Alignment(1, 0.1, 1, 0)
         options_align.add(btnOPTIONS)
-        #Then the block of editing buttons
+        # Then the block of editing buttons
         btnDROPID = gtk.Button('Drop ID')
         btnDROPID.connect('clicked', self.timing_rm_ID)
         btnDROPTIME = gtk.Button('Drop time')
@@ -178,7 +186,7 @@ class TimingWin(gtk.Window):
         edit_vbox.pack_start(btnEDIT, False, False, 0)
         edit_align = gtk.Alignment(1, 0, 1, 0)
         edit_align.add(edit_vbox)
-        #Then the print and save buttons
+        # Then the print and save buttons
         btnPRINT = gtk.Button(stock=gtk.STOCK_PRINT)
         btnPRINT.connect('clicked', print_cb, False)
         btnSAVE = gtk.Button(stock=gtk.STOCK_SAVE)
@@ -188,7 +196,7 @@ class TimingWin(gtk.Window):
         save_vbox.pack_start(btnSAVE, False, False, 0)
         save_align = gtk.Alignment(1, 1, 1, 0)
         save_align.add(save_vbox)
-        #And finally the finish button
+        # And finally the finish button
         btnOK = gtk.Button('Done')
         btnOK.connect('clicked', self.done_timing)
         done_align = gtk.Alignment(1, 0.7, 1, 0)
@@ -216,7 +224,7 @@ class TimingWin(gtk.Window):
                 nt = t - th
                 renderer.set_property('text', str(nt)[:-5])
             except AttributeError:
-                #Handicap is present but is not formatted correctly.
+                # Handicap is present but is not formatted correctly.
                 renderer.set_property('text', '')
         else:
             renderer.set_property('text', '')
@@ -250,7 +258,7 @@ class TimingWin(gtk.Window):
     def update_clock(self):
         '''Updates the clock'''
         # compute time
-        t = time.time()-self.t0
+        t = time.time() - self.t0
         # update label
         self.clocklabel.set_markup(time_format(t))
         # keep updating
@@ -260,7 +268,7 @@ class TimingWin(gtk.Window):
         '''Handles click on Start button
            Sets t0 to the current time'''
         self.t0 = time.time()
-        gtk.timeout_add(100, self.update_clock) #update clock every 100ms
+        gtk.timeout_add(100, self.update_clock)  # update clock every 100ms
 
     def edit_t0(self, jnk_unused):
         '''Handles click on Edit button for the t0 value.
@@ -309,16 +317,16 @@ class TimingWin(gtk.Window):
                 # we are putting an ID in a slot that we hadn't reached yet
                 # Fill in any other missing ones up to this point with ''.
                 ids = [str(new_id)]
-                ids.extend(['' for i_unused in range(self.offset-row-1)])
+                ids.extend(['' for i_unused in range(self.offset - row - 1)])
                 ids.extend(self.rawtimes['ids'])
                 self.rawtimes['ids'] = list(ids)
-                self.offset = row #the new offset
-                self.rawtimes['times'][row] = str(new_time) #the new time
+                self.offset = row  # the new offset
+                self.rawtimes['times'][row] = str(new_time)  # the new time
                 self.timemodel.set_value(treeiter, 0, str(new_id))
                 self.timemodel.set_value(treeiter, 1, str(new_time))
             elif new_time:
                 # we are adjusting the time only.
-                self.rawtimes['times'][row] = str(new_time) #the new time
+                self.rawtimes['times'][row] = str(new_time)  # the new time
                 self.timemodel.set_value(treeiter, 1, str(new_time))
             else:
                 # we are clearing this entry. pop it from time and adjust offset.
@@ -336,21 +344,21 @@ class TimingWin(gtk.Window):
         elif row < -self.offset:
             # Here we are making edits to a slot where there is an ID, but no time.
             if new_time:
-                #we are putting a time in a slot that we hadn't reached yet. Fill in any other missing ones up to this point with blanks.
+                # we are putting a time in a slot that we hadn't reached yet. Fill in any other missing ones up to this point with blanks.
                 times = [str(new_time)]
-                times.extend(['' for i_unused in range(-self.offset-row-1)])
+                times.extend(['' for i_unused in range(-self.offset - row - 1)])
                 times.extend(self.rawtimes['times'])
                 self.rawtimes['times'] = list(times)
-                self.offset = -row #the new offset
-                self.rawtimes['ids'][row] = str(new_id) #the new time
+                self.offset = -row  # the new offset
+                self.rawtimes['ids'][row] = str(new_id)  # the new time
                 self.timemodel.set_value(treeiter, 0, str(new_id))
                 self.timemodel.set_value(treeiter, 1, str(new_time))
             elif new_id:
-                #we are adjusting the id only.
-                self.rawtimes['ids'][row] = str(new_id) #the new time
+                # we are adjusting the id only.
+                self.rawtimes['ids'][row] = str(new_id)  # the new time
                 self.timemodel.set_value(treeiter, 0, str(new_id))
             else:
-                #we are clearing this entry. pop it from id and adjust offset.
+                # we are clearing this entry. pop it from id and adjust offset.
                 self.rawtimes['ids'].pop(row)
                 self.offset += 1
                 self.timemodel.remove(treeiter)
@@ -358,23 +366,23 @@ class TimingWin(gtk.Window):
             if not new_time and not new_id:
                 # we are clearing the entry
                 if self.offset > 0:
-                    self.rawtimes['ids'].pop(row-self.offset)
+                    self.rawtimes['ids'].pop(row - self.offset)
                     self.rawtimes['times'].pop(row)
                 elif self.offset <= 0:
                     self.rawtimes['ids'].pop(row)
-                    self.rawtimes['times'].pop(row+self.offset)
+                    self.rawtimes['times'].pop(row + self.offset)
                 self.timemodel.remove(treeiter)
             else:
                 # adjust the entry; no changes to the stack otherwise.
                 if self.offset > 0:
-                    self.rawtimes['ids'][row-self.offset] = str(new_id)
+                    self.rawtimes['ids'][row - self.offset] = str(new_id)
                     self.rawtimes['times'][row] = str(new_time)
                 elif self.offset <= 0:
                     self.rawtimes['ids'][row] = str(new_id)
-                    self.rawtimes['times'][row+self.offset] = str(new_time)
+                    self.rawtimes['times'][row + self.offset] = str(new_time)
                 self.timemodel.set_value(treeiter, 0, str(new_id))
                 self.timemodel.set_value(treeiter, 1, str(new_time))
-        #reset lapcounter, if used..
+        # reset lapcounter, if used..
         if self.numlaps > 1:
             self.lapcounter = defaultdict(int)
             self.lapcounter.update(Counter(self.rawtimes['ids']))
@@ -401,7 +409,7 @@ class TimingWin(gtk.Window):
                     if old_time > adj_time:
                         new_time = str(old_time - adj_time)[:-5]
                     else:
-                        new_time = '0:00:00.0' #We don't allow negative times.
+                        new_time = '0:00:00.0'  # We don't allow negative times.
                 # Save them, and write out to the timemodel
                 self.rawtimes['times'][row] = str(new_time)
                 self.timemodel.set_value(treeiter, 1, str(new_time))
@@ -425,7 +433,7 @@ class TimingWin(gtk.Window):
             # Figure out what row this is in the timeview
             row = pathlist[0][0]
             # Now figure out what index in self.rawtimes['ids'] it is.
-            ididx = row-max(0, self.offset)
+            ididx = row - max(0, self.offset)
             if ididx >= 0:
                 # Otherwise, there is no ID here so there is nothing to do.
                 # Ask if we are sure.
@@ -444,7 +452,7 @@ class TimingWin(gtk.Window):
                     self.offset += 1
                     # And now shift everything on the display.
                     rowcounter = int(row)
-                    for i in range(ididx-1, -1, -1):
+                    for i in range(ididx - 1, -1, -1):
                         # Write rawtimes[i] into row rowcounter
                         treeiter = self.timemodel.get_iter((rowcounter,))
                         self.timemodel.set_value(treeiter, 0, str(self.rawtimes['ids'][i]))
@@ -474,7 +482,7 @@ class TimingWin(gtk.Window):
             # Figure out what row this is in the timeview
             row = pathlist[0][0]
             # Now figure out what index in self.rawtimes['times'] it is.
-            timeidx = row-max(0, -self.offset)
+            timeidx = row - max(0, -self.offset)
             if timeidx >= 0:
                 # Otherwise, there is no time here so there is nothing to do.
                 # Ask if we are sure.
@@ -493,7 +501,7 @@ class TimingWin(gtk.Window):
                     self.offset -= 1
                     # And now shift everything on the display.
                     rowcounter = int(row)
-                    for i in range(timeidx-1, -1, -1):
+                    for i in range(timeidx - 1, -1, -1):
                         # Write rawtimes[i] into row rowcounter
                         treeiter = self.timemodel.get_iter((rowcounter,))
                         self.timemodel.set_value(treeiter, 1, str(self.rawtimes['times'][i]))
@@ -510,7 +518,8 @@ class TimingWin(gtk.Window):
 
     def resume_times(self, jnk_unused, isMerge):
         '''Handles click on Resume button'''
-        chooser = gtk.FileChooserDialog(title='Choose timing results to resume', action=gtk.FILE_CHOOSER_ACTION_OPEN, buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+        chooser = gtk.FileChooserDialog(title='Choose timing results to resume', action=gtk.FILE_CHOOSER_ACTION_OPEN,
+                                        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
         chooser.set_current_folder(os.path.join(os.getcwd(), self.path))
         ffilter = gtk.FileFilter()
         ffilter.set_name('Timing results')
@@ -526,13 +535,13 @@ class TimingWin(gtk.Window):
                 if isMerge:
                     if self.rawtimes['ids'] and not self.rawtimes['times']:
                         if newrawtimes['times'] and not newrawtimes['ids']:
-                            #Merge! We have IDs, merge in times.
+                            # Merge! We have IDs, merge in times.
                             self.rawtimes['times'] = list(newrawtimes['times'])
                         else:
                             raise MergeError('Must be pure IDs merged into pure times, or vice versa')
                     elif self.rawtimes['times'] and not self.rawtimes['ids']:
                         if newrawtimes['ids'] and not newrawtimes['times']:
-                            #Merge! We have times, merge in IDS.
+                            # Merge! We have times, merge in IDS.
                             self.rawtimes['ids'] = list(newrawtimes['ids'])
                         else:
                             raise MergeError('Must be pure IDs merged into pure times, or vice versa')
@@ -541,9 +550,9 @@ class TimingWin(gtk.Window):
                 else:
                     self.rawtimes['ids'] = newrawtimes['ids']
                     self.rawtimes['times'] = newrawtimes['times']
-                    #self.timestr = saveresults['timestr'] #We will _not_ overwrite when resuming.
+                    # self.timestr = saveresults['timestr'] #We will _not_ overwrite when resuming.
                     self.t0 = saveresults['t0']
-                    gtk.timeout_add(100, self.update_clock) #start the stopwatch
+                    gtk.timeout_add(100, self.update_clock)  # start the stopwatch
                 # Recompute how many racers have checked in
                 self.racers_in = [0] * self.numlaps
                 for ID in self.rawtimes['ids']:
@@ -578,9 +587,10 @@ class TimingWin(gtk.Window):
         saveresults['rawtimes'] = self.rawtimes
         saveresults['timestr'] = self.timestr
         saveresults['t0'] = self.t0
-        with open(os.path.join(self.path, self.path+'_'+self.timestr+'_times.json'), 'wb') as fout:
+        with open(os.path.join(self.path, self.path + '_' + self.timestr + '_times.json'), 'wb') as fout:
             json.dump(saveresults, fout)
-        md = gtk.MessageDialog(None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_INFO, gtk.BUTTONS_CLOSE, "Times saved!")
+        md = gtk.MessageDialog(None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_INFO, gtk.BUTTONS_CLOSE,
+                               "Times saved!")
         md.run()
         md.destroy()
 
@@ -588,7 +598,8 @@ class TimingWin(gtk.Window):
         '''Handles click on the Done button
            Gives two dialogs before closing.'''
         if str(type(source)) == "<type 'gtk.Button'>":
-            oktime_dialog1 = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO, 'Are you sure you want to leave?')
+            oktime_dialog1 = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO,
+                                               'Are you sure you want to leave?')
             oktime_dialog1.set_title('Really done?')
             response1 = oktime_dialog1.run()
             oktime_dialog1.destroy()
@@ -596,7 +607,8 @@ class TimingWin(gtk.Window):
             # in case of delete_event the window closes regardless.
             response1 = gtk.RESPONSE_YES
         if response1 == gtk.RESPONSE_YES:
-            oktime_dialog2 = gtk.MessageDialog(self, gtk.DIALOG_MODAL, gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO, 'Do you want to save before finishing?\nUnsaved data will be lost.')
+            oktime_dialog2 = gtk.MessageDialog(self, gtk.DIALOG_MODAL, gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO,
+                                               'Do you want to save before finishing?\nUnsaved data will be lost.')
             oktime_dialog2.set_title('Save?')
             response2 = oktime_dialog2.run()
             oktime_dialog2.destroy()
@@ -629,8 +641,8 @@ class TimingWin(gtk.Window):
         # add to the appropriate spot on timemodel.
         if self.offset > 0:
             # we have a time in the store to assign it to
-             # put it in the last available time slot
-            self.timemodel.set_value(self.timemodel.get_iter(self.offset-1), 0, txt)
+            # put it in the last available time slot
+            self.timemodel.set_value(self.timemodel.get_iter(self.offset - 1), 0, txt)
         else:
             # It will just be added to the buffer of IDs by prepending to timemodel
             self.timemodel.prepend([txt, ''])
@@ -647,14 +659,30 @@ class TimingWin(gtk.Window):
 
     def new_blank_time(self):
         '''Record a new time'''
-        t = str(datetime.timedelta(milliseconds=int(1000*(time.time()-self.t0))))[:-5]
-        self.rawtimes['times'].insert(0, t) #we prepend to rawtimes, just as we prepend to timemodel
+        t = str(datetime.timedelta(milliseconds=int(1000 * (time.time() - self.t0))))[:-5]
+        self.rawtimes['times'].insert(0, t)  # we prepend to rawtimes, just as we prepend to timemodel
         if self.offset >= 0:
             # No IDs in the buffer, so just prepend it to the liststore.
             self.timemodel.prepend(['', t])
         elif self.offset < 0:
             # IDs in the buffer, so add the time to the oldest ID
             # put it in the last available ID slot
-            self.timemodel.set_value(self.timemodel.get_iter(-self.offset-1), 1, t)
+            self.timemodel.set_value(self.timemodel.get_iter(-self.offset - 1), 1, t)
         self.offset += 1
         self.entrybox.set_text('')
+
+    def check_fonts(self, font):
+        context = self.create_pango_context()
+        fonts = context.list_families()
+        label = False
+        for f in fonts:
+            if f.get_name() == font:
+                self.clocklabel.modify_font(pango.FontDescription(font))
+                attr = pango.AttrList().insert(pango.AttrSize(40000, start_index=0, end_index=len(time_format(0))))
+                self.clocklabel.set_attributes(attr)
+                self.clocklabel.set_markup(time_format(0))
+                label = True
+                break
+        if label is False:
+            self.clocklabel.modify_font(pango.FontDescription("sans 20"))
+            self.clocklabel.set_markup(time_format(0))

@@ -21,12 +21,12 @@ import pygtk
 
 pygtk.require('2.0')
 import gtk
-import os, re
+import os
 import fstimer.gui
 
 
 class PrintShirtNumberWin(gtk.Window):
-    '''Handles the creation of a new project'''
+    '''Handles the setup for printing new shirt racing numbers'''
 
     def __init__(self, path, flag, print_shirtnumb_cb):
         '''Creates print shirt racing numbers window'''
