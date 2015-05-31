@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-#fsTimer - free, open source software for race timing.
-#Copyright 2012-14 Ben Letham
+# fsTimer - free, open source software for race timing.
+# Copyright 2012-14 Ben Letham
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,7 +46,6 @@ import fstimer.printcsvlaps
 import fstimer.printhtml
 import fstimer.printhtmllaps
 from collections import defaultdict
-
 
 class PyTimer(object):
     '''main class of fsTimer'''
@@ -334,6 +333,7 @@ class PyTimer(object):
         '''handles preregistration shirt numbers print'''
         self.printshirtwin = fstimer.gui.printshirtnumber.PrintShirtNumberWin(self.path, 'prereg',
                                                                               self.print_numbers)
+
     def handle_printnumbers_compreg(self, jnk_unused):
         '''handles preregistration shirt numbers print'''
         self.printshirtwin = fstimer.gui.printshirtnumber.PrintShirtNumberWin(self.path, 'compreg',
@@ -341,8 +341,15 @@ class PyTimer(object):
 
     def print_numbers(self, options, flag):
         '''the actual function for shirt numbers print'''
-        from imagetext import ImageText
         import Image, subprocess
+        from imagetext import ImageText
+        from PyPDF2.pdf import PdfFileReader, PdfFileWriter
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.units import cm
+        from StringIO import StringIO
+
+        self.path = self.path + '/'
+
         if flag == 'prereg':
             regjson = self.prereg
         elif flag == 'compreg':
@@ -371,40 +378,55 @@ class PyTimer(object):
         else:
             trz = 3
 
+        outpdf = PdfFileWriter()
         for item in finalreg:
-            img = None
-            f = None
+            imagetext = None
+            finalpng = None
             try:
-                img = ImageText((750, 550), background=(255, 255, 255, 0))
+                imagetext = ImageText((750, 550), background=(255, 255, 255, 0))
                 number = str(int(trz - len(item['ID'])) * "0") + item['ID']
-                img.write_text_box((180, 440), item['First name'] + ' ' + item['Last name'],
+                imagetext.write_text_box((180, 440), item['First name'] + ' ' + item['Last name'],
                                    box_width=400, font_filename=options['fontLetters'],
                                    font_size=24, color=options['fontColor'], place='center')
-                img.write_text_box((180, 40), options['eventname'], box_width=400,
+                imagetext.write_text_box((180, 40), options['eventname'], box_width=400,
                                    font_filename=options['fontLetters'],
                                    font_size=34, color=options['fontColor'], place='center')
-                img.write_text((170, 90), number, font_filename=options['fontNumbers'],
+                imagetext.write_text((170, 90), number, font_filename=options['fontNumbers'],
                                font_size='fill', max_height=200, max_width=400, color=options['fontColor'])
 
-                img.save(options['export'] + '/temp_' + item['ID'] + '.png')
+                imagetext.save(self.path + 'temp_' + item['ID'] + '.png')
                 # Process barcode
                 subprocess.Popen(
                     ['pybarcode2', 'create', '-t', 'png', item['ID'],
-                     options['export'] + '/barcode_' + item['ID']]).communicate()
+                     self.path + 'barcode_' + item['ID']], stderr=None, stdout=None, stdin=None).communicate()
 
-                bcimg = Image.open(options['export'] + '/barcode_' + item['ID'] + '.png')
+                bcimg = Image.open(self.path + 'barcode_' + item['ID'] + '.png')
 
-                temp_img = Image.open(options['export'] + '/temp_' + item['ID'] + '.png')
+                temp_img = Image.open(self.path + 'temp_' + item['ID'] + '.png')
                 temp_img.paste(bcimg.resize((bcimg.size[0] / 2, bcimg.size[1] / 2), Image.ANTIALIAS).rotate(-90),
                                (0, 320))
-                f = img.merge(i1, temp_img)
-                f.save(options['export'] + '/' + item['ID'] + '.png')
-                os.remove(options['export'] + '/temp_' + item['ID'] + '.png')
-                os.remove(options['export'] + '/barcode_' + item['ID'] + '.png')
+                finalpng = imagetext.merge(i1, temp_img)
+                finalpng.save(self.path + item['ID'] + '.png')
+
+                # PDF support
+                imgtmp = StringIO()
+                imgcanvas = canvas.Canvas(imgtmp, pagesize=(26*cm, 20*cm))
+                imgcanvas.drawImage(self.path + item['ID'] + '.png', 0, 0, 750, 550)
+                imgcanvas.save()
+                overlay = PdfFileReader(StringIO(imgtmp.getvalue())).getPage(0)
+                outpdf.addPage(overlay)
+
+                # Remove PIL junk
+                os.remove(self.path + 'temp_' + item['ID'] + '.png')
+                os.remove(self.path + 'barcode_' + item['ID'] + '.png')
+                os.remove(self.path + item['ID'] + '.png')
             except Exception, e:
                 # log some traceback for debug
                 print 'Error shirt print: ' + e
                 continue
+
+        # write final PDF
+        outpdf.write(file(self.path + 'shirtnumbers.pdf',  'wb'))
 
     def gen_pretimewin(self, jnk_unused):
         '''Selects a timing dictionary to use'''

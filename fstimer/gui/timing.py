@@ -125,14 +125,14 @@ class TimingWin(gtk.Window):
         tophbox = gtk.HBox()
         # our default t0, and the stuff on top for setting/edit t0
         self.t0 = 0.
-        btn_t0 = gtk.Button('Start!')
-        btn_t0.connect('clicked', self.set_t0)
+        self.btn_t0 = gtk.Button('Start!')
+        self.btn_t0.connect('clicked', self.set_t0)
         # time display
         self.clocklabel = gtk.Label()
         # self.clocklabel.modify_font(pango.FontDescription("sans 20"))
         self.check_fonts('TRACEROUTE')
         # self.clocklabel.set_markup(time_format(0))
-        tophbox.pack_start(btn_t0, False, False, 10)
+        tophbox.pack_start(self.btn_t0, False, False, 10)
         tophbox.pack_start(self.clocklabel, False, False, 10)
         timevbox1 = gtk.VBox(False, 8)
         timevbox1.pack_start(tophbox, False, False, 0)
@@ -269,6 +269,9 @@ class TimingWin(gtk.Window):
            Sets t0 to the current time'''
         self.t0 = time.time()
         gtk.timeout_add(100, self.update_clock)  # update clock every 100ms
+        self.btn_t0.set_label('Started...')
+        self.btn_t0.set_sensitive(False)
+
 
     def edit_t0(self, jnk_unused):
         '''Handles click on Edit button for the t0 value.
@@ -678,7 +681,9 @@ class TimingWin(gtk.Window):
         for f in fonts:
             if f.get_name() == font:
                 self.clocklabel.modify_font(pango.FontDescription(font))
-                attr = pango.AttrList().insert(pango.AttrSize(40000, start_index=0, end_index=len(time_format(0))))
+                size = pango.AttrSize(40000, start_index=0, end_index=len(time_format(0)))
+                attr = pango.AttrList()
+                attr.insert(size)
                 self.clocklabel.set_attributes(attr)
                 self.clocklabel.set_markup(time_format(0))
                 label = True

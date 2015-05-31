@@ -31,6 +31,12 @@ class PrintShirtNumberWin(gtk.Window):
     def __init__(self, path, flag, print_shirtnumb_cb):
         '''Creates print shirt racing numbers window'''
         super(PrintShirtNumberWin, self).__init__(gtk.WINDOW_TOPLEVEL)
+        self.set_title('fsTimer - Print Shirt Racing Numbers')
+        self.set_position(gtk.WIN_POS_CENTER)
+        self.set_modal(True)
+        self.connect('delete_event', lambda b, jnk: self.hide())
+        self.set_border_width(10)
+        self.set_size_request(250, 400)
         self.modify_bg(gtk.STATE_NORMAL, fstimer.gui.bgcolor)
         self.path = path
         self.print_shirtnumb_cb = print_shirtnumb_cb
@@ -43,45 +49,24 @@ class PrintShirtNumberWin(gtk.Window):
         self.options['fontColor'] = (40, 40, 40)
         self.options['background'] = 'fstimer/data/background.png'
         self.options['logo'] = 'fstimer/data/fstimer_logo.png'
-        self.options['export'] = 'fstimer/export/'
-        self.set_modal(True)
-        self.set_title('fsTimer - Print Shirt Racing Numbers')
-        self.set_position(gtk.WIN_POS_CENTER)
-        self.connect('delete_event', lambda b, jnk: self.hide())
-        self.set_border_width(10)
-        # Event Name.
         label_0 = gtk.Label('Enter the event/race name.')
-        # And an error, if needed..
         self.label_00 = gtk.Label()
         self.label_00.set_line_wrap(True)
-        # And the text entry
         self.eventname = gtk.Entry(max=80)
-        # Background image.
         label_1 = gtk.Label('Choose the background file.')
-        # And the text entry
         btnBKGFILE = gtk.Button('Choose file')
         btnBKGFILE.connect('clicked', self.choose_images, 'background')
         self.background = gtk.Entry(max=120)
         self.background.set_text(self.options['background'])
-        # Background image.
         label_2 = gtk.Label('Choose the race logo file.')
-        # And the text entry
         btnLGFILE = gtk.Button('Choose file')
         btnLGFILE.connect('clicked', self.choose_images, 'logo')
         self.logo = gtk.Entry(max=120)
         self.logo.set_text(self.options['logo'])
-        # Background image.
         self.label_fontscolor = gtk.Label('')
         self.label_fontscolor.set_markup('<span color="grey">Test your font color.</span>')
-        # And the text entry
         btnCOLOR = gtk.Button('Choose Color')
         btnCOLOR.connect('clicked', self.choose_color)
-        # And the text entry
-        btnEXPORT = gtk.Button('Choose export folder')
-        btnEXPORT.connect('clicked', self.choose_folder)
-        self.export = gtk.Entry(max=120)
-        self.export.set_text(self.options['export'])
-        # And an hbox with 2 buttons
         hbox_1 = gtk.HBox(False, 0)
         btnCANCEL = gtk.Button(stock=gtk.STOCK_CLOSE)
         btnCANCEL.connect('clicked', lambda btn: self.hide())
@@ -109,8 +94,6 @@ class PrintShirtNumberWin(gtk.Window):
         vbox.pack_start(self.logo, False, False, 0)
         vbox.pack_start(self.label_fontscolor, False, False, 0)
         vbox.pack_start(btnCOLOR, False, False, 0)
-        vbox.pack_start(btnEXPORT, False, False, 0)
-        vbox.pack_start(self.export, False, False, 0)
         vbox.pack_start(hbox_1, False, False, 0)
         self.add(vbox)
         self.show_all()
